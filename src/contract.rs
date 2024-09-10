@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, Metadata, MigrateMsg, QueryMsg};
-use crate::state::{AVAILABLE_IDS, TOKEN, TOKEN_COUNT};
+use crate::state::{AVAILABLE_IDS, TOKEN, TOKEN_COUNT, CHECK_USER};
 
 use cw2::set_contract_version;
 use cw_utils::parse_reply_instantiate_data;
@@ -70,6 +70,21 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::MintToken {} => {
+
+            match CHECK_USER.may_load(deps.storage, info.sender.clone())? {
+                Some(true) => {
+                    // If the user exists and is true, return an error
+                    return Err(ContractError::UserCanMintOnce {});
+                }
+                Some(false) => {
+                    // If the user exists but is false, do nothing
+                }
+                None => {
+                    // If the user does not exist, save it with false
+                    CHECK_USER.save(deps.storage, info.sender.clone(), &false)?;
+                }
+            }
+
             let mut available_ids = AVAILABLE_IDS.load(deps.storage)?;
 
             let token_addr = TOKEN.load(deps.storage)?;
@@ -97,7 +112,7 @@ pub fn execute(
                     contract_addr: token_addr.clone().to_string(),
                     msg: to_json_binary(&Cw721BaseExecuteMsg::Mint {
                         token_id: token_id.to_string(),
-                        owner: info.sender.to_string(),
+                        owner: info.sender.to_string().clone(),
                         token_uri: Some(token_uri),
                         extension: Some(Metadata {
                             image: Some(image_uri),
@@ -113,6 +128,8 @@ pub fn execute(
             AVAILABLE_IDS.save(deps.storage, &available_ids)?;
             token_count -= 1; // decrease with each minted NFT
             TOKEN_COUNT.save(deps.storage, &token_count)?;
+
+            CHECK_USER.save(deps.storage, info.sender, &true)?;
 
             Ok(Response::new()
                 .add_attribute("action", "transfer")

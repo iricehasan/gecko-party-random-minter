@@ -1,1 +1,1 @@
-601de6cc0a900f53f1dd76528134ad7ae569b366db945fa4c489225015eadaec  gecko_random_minter.wasm
+48b32afcff82b094ccc3d546e591bf3036749124718e601be47945bb2dd9e4dc  gecko_random_minter.wasm

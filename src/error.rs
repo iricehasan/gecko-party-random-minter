@@ -17,4 +17,7 @@ pub enum ContractError {
 
     #[error("The reply ID is unrecognized")]
     UnrecognizedReply {},
+
+    #[error("Users can only mint NFT once")]
+    UserCanMintOnce {},
 }
